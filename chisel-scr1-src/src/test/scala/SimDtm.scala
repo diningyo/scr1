@@ -1,4 +1,4 @@
-
+// See LICENSE for license details.
 import chisel3._
 
 import scr1._
