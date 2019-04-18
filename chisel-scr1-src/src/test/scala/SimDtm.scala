@@ -3,9 +3,10 @@ import chisel3._
 
 import scr1._
 
-class SimDtm(implicit cfg: SCR1Config) extends Module {
+class SimDtm(hexBinFile: String)(implicit cfg: SCR1Config) extends Module {
   val io = IO(new Bundle {
-
+    val halt = Input(Bool())
+    val success = Output(Bool())
   })
 
   val memSize = 32 * 1024
