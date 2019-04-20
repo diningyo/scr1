@@ -1,121 +1,199 @@
 // See LICENSE for license details.
 
-import java.io.File
-
-import scala.collection.mutable.Map
+import scala.util.control.Breaks
 import org.scalatest.{BeforeAndAfterAllConfigMap, ConfigMap}
 import chisel3.iotesters.{ChiselFlatSpec, Driver, PeekPokeTester}
 
-import scr1.SCR1Config
-
-
-class Scr1UnitTester(c: SimDtm, testBin: String) extends PeekPokeTester(c) {
-
-  private val dtm = c
-
-  println(s"test name - $testBin")
-
-  fail
-}
-
-/*
-add.S      \
-addi.S         \
-and.S          \
-andi.S         \
-auipc.S        \
-isa/rv32ui/beq.S          \
-isa/rv32ui/bge.S          \
-isa/rv32ui/bgeu.S         \
-isa/rv32ui/blt.S          \
-isa/rv32ui/bltu.S         \
-isa/rv32ui/bne.S          \
-isa/rv32mi/csr.S          \
-isa/rv32um/div.S          \
-isa/rv32um/divu.S         \
-isa/rv32ui/fence_i.S      \
-isa/rv32mi/illegal.S      \
-isa/rv32ui/jal.S          \
-isa/rv32ui/jalr.S         \
-isa/rv32ui/lb.S           \
-isa/rv32ui/lbu.S          \
-isa/rv32ui/lh.S           \
-isa/rv32ui/lhu.S          \
-isa/rv32ui/lui.S          \
-isa/rv32ui/lw.S           \
-isa/rv32mi/ma_addr.S      \
-isa/rv32mi/ma_fetch.S     \
-isa/rv32mi/mcsr.S         \
-isa/rv32um/mul.S          \
-isa/rv32um/mulh.S         \
-isa/rv32um/mulhsu.S       \
-isa/rv32um/mulhu.S        \
-isa/rv32ui/or.S           \
-isa/rv32ui/ori.S          \
-isa/rv32um/rem.S          \
-isa/rv32um/remu.S         \
-isa/rv32uc/rvc.S          \
-isa/rv32ui/sb.S           \
-isa/rv32mi/sbreak.S       \
-isa/rv32mi/scall.S        \
-isa/rv32ui/sh.S           \
-isa/rv32mi/shamt.S        \
-isa/rv32ui/simple.S       \
-isa/rv32ui/sll.S          \
-isa/rv32ui/slli.S         \
-isa/rv32ui/slt.S          \
-isa/rv32ui/slti.S         \
-isa/rv32ui/sltiu.S        \
-isa/rv32ui/sltu.S         \
-isa/rv32ui/sra.S          \
-isa/rv32ui/srai.S         \
-isa/rv32ui/srl.S          \
-isa/rv32ui/srli.S         \
-isa/rv32ui/sub.S          \
-isa/rv32ui/sw.S           \
-isa/rv32ui/xor.S          \
-isa/rv32ui/xori.S
-*/
+import scr1._
 
 /**
-  *
+  * Test environment for Scr1
+  * @param c testbench object which has Scr1 and memory model.
   */
-class Scr1Tester extends ChiselFlatSpec with BeforeAndAfterAllConfigMap {
+class Scr1UnitTester(c: SimDtm) extends PeekPokeTester(c) {
 
-  behavior of "Scr1"
+  val timeoutCycle = 1000
+  val b = Breaks
 
-  // Driver.execute's default argument Map
-  val args = Map[String, Any](
-    "--backend-name" -> "verilator",
-    "--generate-vcd-output" -> "off"/*,
-    "--is-gen-harness" -> None,
-    "--is-gen-verilog" -> None,
-    "--is-compiling" -> None*/
-  )
+  b.breakable {
+    reset()
+    step(1)
 
-  override def beforeAll(configMap: ConfigMap) = {
-    if (configMap.get("--backend-name").isDefined) {
-      args("--backend-name") = configMap.get("--backend-name").fold("")(_.toString)
+    poke(c.io.halt, true)
+    step(10)
+    poke(c.io.halt, false)
+
+    for (_ <- 0 until timeoutCycle) {
+      if (peek(c.io.success) == 0x1) {
+        println("c.io.success becomes high. test is success")
+        b.break
+      }
+      step(1)
     }
   }
 
-  def getArgs(): Array[String] = {
-    args.map {
+  expect(c.io.success, true)
+  step(5)
+}
+
+/**
+  * Object for riscv-tests's parameters
+  */
+object RiscvTestsParams {
+
+  /**
+    * riscv-tests/isa/rv32ui
+    */
+  val rv32uiTestList: Seq[((String, String), Int)] = Map(
+    "add"        -> "rv32ui-p-add.hex",
+    "addi"       -> "rv32ui-p-addi.hex",
+    "and"        -> "rv32ui-p-and.hex",
+    "andi"       -> "rv32ui-p-andi.hex",
+    "auipc"      -> "rv32ui-p-auipc.hex",
+    "beq"        -> "rv32ui-p-beq.hex",
+    "bge"        -> "rv32ui-p-bge.hex",
+    "bgeu"       -> "rv32ui-p-bgeu.hex",
+    "blt"        -> "rv32ui-p-blt.hex",
+    "bltu"       -> "rv32ui-p-bltu.hex",
+    "bne"        -> "rv32ui-p-bne.hex",
+    "fence_i"    -> "rv32ui-p-fence_i.hex",
+    "jal"        -> "rv32ui-p-jal.hex",
+    "jalr"       -> "rv32ui-p-jalr.hex",
+    "lb"         -> "rv32ui-p-lb.hex",
+    "lbu"        -> "rv32ui-p-lbu.hex",
+    "lh"         -> "rv32ui-p-lh.hex",
+    "lhu"        -> "rv32ui-p-lhu.hex",
+    "lui"        -> "rv32ui-p-lui.hex",
+    "lw"         -> "rv32ui-p-lw.hex",
+    "or"         -> "rv32ui-p-or.hex",
+    "ori"        -> "rv32ui-p-ori.hex",
+    "sb"         -> "rv32ui-p-sb.hex",
+    "sh"         -> "rv32ui-p-sh.hex",
+    "simple"     -> "rv32ui-p-simple.hex",
+    "sll"        -> "rv32ui-p-sll.hex",
+    "slli"       -> "rv32ui-p-slli.hex",
+    "slt"        -> "rv32ui-p-slt.hex",
+    "slti"       -> "rv32ui-p-slti.hex",
+    "sltiu"      -> "rv32ui-p-sltiu.hex",
+    "sltu"       -> "rv32ui-p-sltu.hex",
+    "sra"        -> "rv32ui-p-sra.hex",
+    "srai"       -> "rv32ui-p-srai.hex",
+    "srl"        -> "rv32ui-p-srl.hex",
+    "srli"       -> "rv32ui-p-srli.hex",
+    "sub"        -> "rv32ui-p-sub.hex",
+    "sw"         -> "rv32ui-p-sw.hex",
+    "xor"        -> "rv32ui-p-xor.hex",
+    "xori"       -> "rv32ui-p-xori.hex"
+  ).toSeq.sortBy(_._1).zipWithIndex
+
+  /**
+    * riscv-tests/isa/rv32mi
+    */
+  val rv32miTestList: Seq[((String, String), Int)] = Map(
+    "breakpoint" -> "rv32mi-p-breakpoint.hex",
+    "csr"        -> "rv32mi-p-csr.hex",
+    "illegal"    -> "rv32mi-p-illegal.hex",
+    "ma_addr"    -> "rv32mi-p-ma_addr.hex",
+    "ma_fetch"   -> "rv32mi-p-ma_fetch.hex",
+    "mcsr"       -> "rv32mi-p-mcsr.hex",
+    "sbreak"     -> "rv32mi-p-sbreak.hex",
+    "scall"      -> "rv32mi-p-scall.hex",
+    "shamt"      -> "rv32mi-p-shamt.hex"
+  ).toSeq.sortBy(_._1).zipWithIndex
+
+  /**
+    * riscv-tests/isa/rv32uc
+    */
+  val rv32ucTestList: Seq[((String, String), Int)] = Map(
+    "rvc"        -> "rv32uc-p-rvc.hex"
+  ).toSeq.sortBy(_._1).zipWithIndex
+
+  /**
+    * riscv-tests/isa/rv32um
+    */
+  val rv32umTestList: Seq[((String, String), Int)] = Map(
+    "div"        -> "rv32um-p-div.hex",
+    "divu"       -> "rv32um-p-divu.hex",
+    "mul"        -> "rv32um-p-mul.hex",
+    "mulh"       -> "rv32um-p-mulh.hex",
+    "mulhsu"     -> "rv32um-p-mulhsu.hex",
+    "mulhu"      -> "rv32um-p-mulhu.hex",
+    "rem"        -> "rv32um-p-rem.hex",
+    "remu"       -> "rv32um-p-remu.hex"
+  ).toSeq.sortBy(_._1).zipWithIndex
+}
+
+/**
+  * riscv-tests test environment
+  */
+abstract class Scr1BaseTester extends ChiselFlatSpec with BeforeAndAfterAllConfigMap  {
+
+  val defaultArgs = scala.collection.mutable.Map(
+    "--generate-vcd-output" -> "off",
+    "--backend-name" -> "verilator",
+    "--is-verbose" -> false
+  )
+
+  override def beforeAll(configMap: ConfigMap): Unit = {
+    if (configMap.get("--backend-name").isDefined) {
+      defaultArgs("--backend-name") = configMap.get("--backend-name").fold("")(_.toString)
+    }
+    if (configMap.get("--generate-vcd-output").isDefined) {
+      defaultArgs("--generate-vcd-output") = configMap.get("--generate-vcd-output").fold("")(_.toString)
+    }
+    if (configMap.get("--is-verbose").isDefined) {
+      defaultArgs("--is-verbose") = true
+    }
+  }
+
+  def getArgs(optArgs: Map[String, Any]): Array[String] = {
+    val argsMap = defaultArgs ++ optArgs
+    argsMap.map {
       case (key: String, value: String) => s"$key=$value"
       case (key: String, value: Boolean) => if (value) key else ""
     }.toArray
   }
 
-  val riscvTestsList = List("add", "ldi")
+  def dutName: String = "Scr1"
 
-  for (instruction <- riscvTestsList) {
-    it should s"pass a one of riscv-tests - $instruction" in {
-      implicit val cfgs = SCR1Config()
-      Driver.execute(getArgs(), () => new SimDtm) {
-        c => new Scr1UnitTester(c, "") {
+  def runRiscvTests(group: String, test: ((String, String), Int))
+                   (implicit cfg: SCR1Config): Unit = {
 
-        }
+    val ((instruction, testFile), seqNo) = test
+
+    val testFilePath = isaTestDir + testFile
+
+    it should f"support RISC-V instruction $instruction%-10s - [riscv-tests:$group%s-$seqNo%03d]" in {
+
+      val args = getArgs(Map(
+        "--top-name" -> instruction,
+        "--target-dir" -> s"test_run_dir/isa/$instruction"
+      ))
+
+      Driver.execute(args, () => new SimDtm(testFilePath)) {
+        c => new Scr1UnitTester(c)
       } should be (true)
     }
+  }
+
+  val isaTestDir = "src/test/resources/isa/"
+}
+
+/**
+  * Test module for riscv-tests RV32I
+  */
+class Scr1RV32ITester extends Scr1BaseTester {
+
+  behavior of dutName
+
+  implicit val cfg: SCR1Config = SCR1Config()
+
+  val testList = Map(
+    "rv32ui" -> RiscvTestsParams.rv32uiTestList,
+    "rv32mi" -> RiscvTestsParams.rv32miTestList
+  )
+
+  for ((subTestGroup, subTestList) <- testList; test <- subTestList) {
+    runRiscvTests(subTestGroup, test)
   }
 }
