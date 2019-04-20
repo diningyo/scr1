@@ -10,13 +10,12 @@ class SimDtm(hexBinFile: String)(implicit cfg: SCR1Config) extends Module {
   })
 
   val memSize = 32 * 1024
-  val numIf = 2
   val addrWidth = 32
   val dataWidth = 32
   val idWidth = 4
 
   val dut = Module(new Scr1Top)
-  val mem = Module(new Scr1MemoryTbAxiWrapper(memSize, numIf, addrWidth, dataWidth, idWidth))
+  val mem = Module(new Scr1MemoryTbAxiWrapper(memSize, addrWidth, dataWidth, idWidth, cfg.irqNum))
 
   io := DontCare
   dut.io := DontCare
