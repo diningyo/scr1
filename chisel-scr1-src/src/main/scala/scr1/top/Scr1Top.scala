@@ -2,8 +2,10 @@
 
 package scr1.top
 
+import Chisel.Reset
 import chisel3._
 import scr1.core._
+import scr1.core.primitives.{ResetBufCell, ResetSyncCell}
 
 
 class Scr1Top(implicit cfg: SCR1Config) extends Module {
@@ -126,4 +128,35 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
   })
 
   io := DontCare
+  //-------------------------------------------------------------------------------
+  // Reset logic
+  //-------------------------------------------------------------------------------
+  // Power-Up Reset synchronizer
+  val modPwrupRstSync = Module(new ResetSyncCell())
+  modPwrupRstSync.reset := io.pwripRst
+  modPwrupRstSync.io.testRst := io.testRst
+  modPwrupRstSync.io.testMode := io.testMode
+  val pwrupRstSync = modPwrupRstSync.io.rstOut
+
+  // Regular Reset synchronizer
+  val modRstResetSync = Module(new ResetSyncCell())
+  modRstResetSync.io.testRst := io.testRst
+  modRstResetSync.io.testMode := io.testMode
+  val rstSync = modRstResetSync.io.rstOut
+
+  // CPU Reset synchronizer
+  val modCpuRstSync = Module(new ResetSyncCell)
+  modCpuRstSync.io.testRst := io.testRst
+  modCpuRstSync.io.testMode := io.testMode
+  val cpuRstSync = modCpuRstSync.io.rstOut
+
+  // Combo Reset (Power-Up and Regular Resets): reset_n
+  val resetSync = rstSync && pwrupRstSync
+  val modResetCell = Module(new ResetBufCell)
+  modResetCell.reset := resetSync
+  modResetCell.io.testMode := io.testMode
+  modResetCell.io.testRst := io.testRst
+  modResetCell.io.resetIn := false.B
+
+
 }

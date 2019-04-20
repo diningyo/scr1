@@ -34,7 +34,7 @@ class ResetSyncCell extends Module {
     val rstOut = Output(Bool())
   })
 
-  val rstDff = RegInit("b11".U(2.W))
+  val rstDff = RegInit(VecInit(Seq.fill(2)(true.B)))
   val localRstIn = Mux(io.testMode, io.testRst, reset)
 
   withReset(localRstIn) {
