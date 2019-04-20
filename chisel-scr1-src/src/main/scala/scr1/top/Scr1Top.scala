@@ -1,4 +1,5 @@
 // See LICENSE for license details.
+
 package scr1.top
 
 import chisel3._
@@ -7,12 +8,16 @@ import scr1.core._
 
 class Scr1Top(implicit cfg: SCR1Config) extends Module {
   val io = IO(new Bundle {
+    val pwripRst = Input(Bool()) // Power-up Reset
+    val cpuRrst = Input(Bool()) // CPU Reset (Core Reset)
     val testMode = Input(Bool()) // Test mode
+    val testRst = Input(Bool()) // Test mode's reset
     val rtcClk = Input(Clock()) // Real-time clock
-    val rstnOut = Output(Bool()) // Core reset from DBGC
+    val ndmRstOut = if (cfg.dbgcEn) Some(Output(Bool())) else None // Non-DM Reset from the Debug Module (DM)
 
     // Fuses
-    val fuseMhartId = Input(UInt(cfg.xLen.W)) // Hart ID
+    val fuseMhartId = Input(UInt(cfg.xlen.W)) // Hart ID
+    val fuseIdcode = if (cfg.dbgcEn) Some(Input(UInt(32.W))) else None // TAPC IDCODE
 
     // IRQ
     val irqLines = cfg.irqType match {
@@ -22,7 +27,7 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
     val softIrq = Input(Bool()) // Software IRQ input
 
     // JTAG I/F
-    val trstn = if (cfg.dbgcEn) Some(Input(Bool())) else None
+    val trst = if (cfg.dbgcEn) Some(Input(Bool())) else None // change polarity(negedge -> posedge)
     val tcl = if (cfg.dbgcEn) Some(Input(Bool())) else None
     val tms = if (cfg.dbgcEn) Some(Input(Bool())) else None
     val tdi = if (cfg.dbgcEn) Some(Input(Bool())) else None
@@ -31,7 +36,7 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
 
     // Instruction Memory Interface
     val imemAwId = Output(UInt(4.W))
-    val imemAwAddr = Output(UInt(32.W))
+    val imemAwAddr = Output(UInt(cfg.imemAWidth.W))
     val imemAwLen = Output(UInt(8.W))
     val imemAwSize = Output(UInt(3.W))
     val imemAwBurst = Output(UInt(2.W))
@@ -43,7 +48,7 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
     val imemAwQos = Output(UInt(4.W))
     val imemAwValid = Output(Bool())
     val imemAwReady = Input(Bool())
-    val imemWData = Output(UInt(32.W))
+    val imemWData = Output(UInt(cfg.imemDWidth.W))
     val imemWStrb = Output(UInt(4.W))
     val imemWLast = Output(Bool())
     val imemWUser = Output(UInt(4.W))
@@ -55,7 +60,7 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
     val imemBReady = Output(Bool())
 
     val imemArId = Output(UInt(4.W))
-    val imemArAddr = Output(UInt(32.W))
+    val imemArAddr = Output(UInt(cfg.imemAWidth.W))
     val imemArLen = Output(UInt(8.W))
     val imemArSize = Output(UInt(3.W))
     val imemArBurst = Output(UInt(2.W))
@@ -67,7 +72,7 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
     val imemArQos = Output(UInt(4.W))
     val imemArValid = Output(Bool())
     val imemArReady = Input(Bool())
-    val imemRData = Input(UInt(32.W))
+    val imemRData = Input(UInt(cfg.imemDWidth.W))
     val imemRId = Input(UInt(4.W))
     val imemRLast = Input(Bool())
     val imemRUser = Input(UInt(4.W))
@@ -76,7 +81,7 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
 
     // Data Memory Interface
     val dmemAwId = Output(UInt(4.W))
-    val dmemAwAddr = Output(UInt(32.W))
+    val dmemAwAddr = Output(UInt(cfg.dmemAWidth.W))
     val dmemAwLen = Output(UInt(8.W))
     val dmemAwSize = Output(UInt(3.W))
     val dmemAwBurst = Output(UInt(2.W))
@@ -88,8 +93,8 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
     val dmemAwQos = Output(UInt(4.W))
     val dmemAwValid = Output(Bool())
     val dmemAwReady = Input(Bool())
-    val dmemWData = Output(UInt(32.W))
-    val dmemWStrb = Output(UInt(4.W))
+    val dmemWData = Output(UInt(cfg.dmemDWidth.W))
+    val dmemWStrb = Output(UInt((cfg.dmemDWidth / 8).W))
     val dmemWLast = Output(Bool())
     val dmemWUser = Output(UInt(4.W))
     val dmemWValid = Output(Bool())
@@ -100,7 +105,7 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
     val dmemBReady = Output(Bool())
 
     val dmemArId = Output(UInt(4.W))
-    val dmemArAddr = Output(UInt(32.W))
+    val dmemArAddr = Output(UInt(cfg.dmemDWidth.W))
     val dmemArLen = Output(UInt(8.W))
     val dmemArSize = Output(UInt(3.W))
     val dmemArBurst = Output(UInt(2.W))
@@ -112,7 +117,7 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
     val dmemArQos = Output(UInt(4.W))
     val dmemArValid = Output(Bool())
     val dmemArReady = Input(Bool())
-    val dmemRData = Input(UInt(32.W))
+    val dmemRData = Input(UInt(cfg.dmemDWidth.W))
     val dmemRId = Input(UInt(4.W))
     val dmemRLast = Input(Bool())
     val dmemRUser = Input(UInt(4.W))
