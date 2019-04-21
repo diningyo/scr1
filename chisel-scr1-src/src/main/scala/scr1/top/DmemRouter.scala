@@ -2,7 +2,7 @@
 package scr1.top
 
 import chisel3._
-import chisel3.util.{MuxCase, is, switch}
+import chisel3.util._
 import scr1.core.SCR1Config
 
 //-------------------------------------------------------------------------------
@@ -175,7 +175,7 @@ class DmemRouter(implicit cfg: SCR1Config) extends Module {
     }
     is (Fsm.data.U) {
       when (selResp === MemResp.rdyOk.U) {
-        io.port0Req := io.dmemReq & (portSel === Sel.selPort1.U)
+        io.port0Req := io.dmemReq && (portSel === Sel.selPort1.U)
       }
     }
   }
@@ -194,7 +194,7 @@ class DmemRouter(implicit cfg: SCR1Config) extends Module {
     }
     is (Fsm.data.U) {
       when (selResp === MemResp.rdyOk.U) {
-        io.port2Req := io.dmemReq & (portSel === Sel.selPort2.U)
+        io.port2Req := io.dmemReq && (portSel === Sel.selPort2.U)
       }
     }
   }
