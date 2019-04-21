@@ -10,7 +10,6 @@ class Timer(implicit cfg: SCR1Config) extends Module {
   val io = IO(new Bundle {
     // Common
     val rtcClk = Input(Clock())
-    val rtcRst = Input(Bool())
 
     // Memory interface
     val dmemReq = Input(Bool())
@@ -26,4 +25,6 @@ class Timer(implicit cfg: SCR1Config) extends Module {
     val timerVal = Output(UInt(64.W))
     val timerIrq = Output(Bool())
   })
+
+  io := DontCare
 }

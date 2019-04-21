@@ -48,4 +48,6 @@ class DmemRouter(implicit cfg: SCR1Config) extends Module {
     val port2Resp = Input(UInt(2.W))
   })
 
+  io := DontCare
+
 }

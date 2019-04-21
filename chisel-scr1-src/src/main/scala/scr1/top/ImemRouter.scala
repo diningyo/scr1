@@ -32,4 +32,6 @@ class ImemRouter(implicit cfg: SCR1Config) extends Module {
     val port1Resp = Input(UInt(2.W))
   })
 
+  io := DontCare
+
 }
