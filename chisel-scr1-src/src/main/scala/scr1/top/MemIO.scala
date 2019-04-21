@@ -8,9 +8,10 @@ import chisel3._
   * Memory command
   */
 object MemCmd {
-  val width = 1
-  val rd = 0.U(width.W)
-  val wr = 1.U(width.W)
+  val width = 2
+  val rd = 0
+  val wr = 1
+  val error = 2
 }
 
 /**
@@ -18,9 +19,9 @@ object MemCmd {
   */
 object MemWidth {
   val width = 2
-  val byte = 0.U(width.W)
-  val hword = 1.U(width.W)
-  val word = 2.U(width.W)
+  val byte = 0
+  val hword = 1
+  val word = 2
 }
 
 /**
@@ -28,7 +29,7 @@ object MemWidth {
   */
 object MemResp {
   val width = 2
-  val notRdy = 0.U(width.W)
-  val rdyOk = 1.U(width.W)
-  val rdyEr = 2.U(width.W)
+  val notRdy = 0
+  val rdyOk = 1
+  val rdyEr = 2
 }

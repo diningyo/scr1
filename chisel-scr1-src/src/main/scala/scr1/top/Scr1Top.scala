@@ -407,7 +407,7 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
   axiImemReqAck := imemAxi.io.coreReqAck
   imemAxi.io.coreReq    := axiImemReq
   imemAxi.io.coreCmd    := axiImemCmd
-  imemAxi.io.coreWidth  := MemWidth.word
+  imemAxi.io.coreWidth  := MemWidth.word.U
   imemAxi.io.coreAddr   := axiImemAddr
   imemAxi.io.coreWdata  := 0.U
   axiImemRdata := imemAxi.io.coreRdata
@@ -474,7 +474,7 @@ class Scr1Top(implicit cfg: SCR1Config) extends Module {
   axiDmemReqAck := dmemAxi.io.coreReqAck
   dmemAxi.io.coreReq    := axiDmemReq
   dmemAxi.io.coreCmd    := axiDmemCmd
-  dmemAxi.io.coreWidth  := MemWidth.word
+  dmemAxi.io.coreWidth  := MemWidth.word.U
   dmemAxi.io.coreAddr   := axiDmemAddr
   dmemAxi.io.coreWdata  := 0.U
   axiDmemRdata := dmemAxi.io.coreRdata
