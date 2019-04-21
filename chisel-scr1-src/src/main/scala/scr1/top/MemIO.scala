@@ -22,6 +22,7 @@ object MemWidth {
   val byte = 0
   val hword = 1
   val word = 2
+  val error = 3
 }
 
 /**
